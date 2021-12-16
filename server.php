@@ -91,26 +91,33 @@ switch ( strtoupper( $method ) ) {
 
 	// Caso POST
 	case 'POST':
+		// Asumiendo que recibimos un json, lo recibimos en crudo
 		$json = file_get_contents( 'php://input' );
 		$books[] = json_decode( $json );
-		echo array_keys($books)[count($books)-1];
+		// echo array_keys($books)[count($books)-1];        // entrega el ultimo id, como convención
+		echo json_encode($books);			// En este caso, retornaremos toda la colección
 		break;
 
 	// Caso PUT
 	case 'PUT':
+		// Si existen elementos, y el ID está en el arreglo, lo modificamos
 		if ( !empty($resourceId) && array_key_exists( $resourceId, $books ) ) {
 			$json = file_get_contents( 'php://input' );
 			
 			$books[ $resourceId ] = json_decode( $json, true );
 
-			echo $resourceId;
+			// echo $resourceId;					// entrega el ultimo id, como convención
+			echo json_encode($books);			// En este caso, retornaremos toda la colección
 		}
 		break;
 	
 	// Caso DELETE
 	case 'DELETE':
+		// Si existen elementos, y el ID está en el arreglo, lo eliminamos
 		if ( !empty($resourceId) && array_key_exists( $resourceId, $books ) ) {
 			unset( $books[ $resourceId ] );
+
+			echo json_encode($books);			// En este caso, retornaremos toda la colección
 		}
 		break;
 	default:
