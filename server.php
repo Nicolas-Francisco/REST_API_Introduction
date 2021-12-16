@@ -2,6 +2,67 @@
 
 header('Content-Type: application/json');
 
+// AUTENTIFICACION BASADA EN HMAC
+// Si alguno de estos parámetros no está en el header
+if ( 
+	!array_key_exists('HTTP_X_HASH', $_SERVER) || 
+	!array_key_exists('HTTP_X_TIMESTAMP', $_SERVER) || 
+	!array_key_exists('HTTP_X_UID', $_SERVER)  
+	) {
+
+	// Lanzamos un error de autorización
+	header( 'Status-Code: 403' );
+
+	echo json_encode(
+		[
+			'error' => "No autorizado",
+		]
+	);
+	
+	die;
+}
+
+// Rescatamos todos los valores del header, id, timestamp y hash
+list( $hash, $uid, $timestamp ) = [ $_SERVER['HTTP_X_HASH'], $_SERVER['HTTP_X_UID'], $_SERVER['HTTP_X_TIMESTAMP'] ];
+// mensaje secreto
+$secret = 'sic mundus creatus est';
+// generamos el hash
+$newHash = sha1($uid.$timestamp.$secret);
+
+if ( $newHash !== $hash ) {
+	header( 'Status-Code: 403' );
+	
+		echo json_encode(
+			[
+				'error' => "No autorizado. Hash esperado: $newHash, hash recibido: $hash",
+			]
+		);
+		
+		die;
+}
+
+
+// AUTENTIFICACIÓN BASADA EN HTTP
+// Autenticación del nombre de usuario
+// $user = array_key_exists('PHP_AUTH_USER', $_SERVER) ? $_SERVER['PHP_AUTH_USER'] : '';
+// // Autenticación de la contraseña del usuario
+// $pwd = array_key_exists('PHP_AUTH_PW', $_SERVER) ? $_SERVER['PHP_AUTH_PW'] : '';
+
+// // Verificación de la autenticación del usuario.
+// // en este caso, solo mauro puede ingresar
+// if ( $user !== 'blackfire' || $pwd !== '1234' ) {
+// 	header('Status-Code: 403');
+
+// 	echo json_encode(
+// 		[ 
+// 			'error' => "Usuario y/o password incorrectos", 
+// 		]
+// 	);
+
+// 	die;
+// }
+
+
 // Definimos los recursos disponibles
 $allowedResourceTypes = [
 	'books',
