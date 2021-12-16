@@ -2,46 +2,86 @@
 
 header('Content-Type: application/json');
 
-// AUTENTIFICACION BASADA EN HMAC
-// Si alguno de estos parámetros no está en el header
-if ( 
-	!array_key_exists('HTTP_X_HASH', $_SERVER) || 
-	!array_key_exists('HTTP_X_TIMESTAMP', $_SERVER) || 
-	!array_key_exists('HTTP_X_UID', $_SERVER)  
-	) {
-
-	// Lanzamos un error de autorización
-	header( 'Status-Code: 403' );
-
+// AUTENTIFICACIÓN BASADA EN ACCESS TOKENS
+// Si no recibimos un token, entonces lanzamos error
+if ( !array_key_exists( 'HTTP_X_TOKEN', $_SERVER ) ) {
+	http_response_code( 401 );
 	echo json_encode(
 		[
-			'error' => "No autorizado",
+			'error' => "token needed",
 		]
 	);
 	
 	die;
 }
 
-// Rescatamos todos los valores del header, id, timestamp y hash
-list( $hash, $uid, $timestamp ) = [ $_SERVER['HTTP_X_HASH'], $_SERVER['HTTP_X_UID'], $_SERVER['HTTP_X_TIMESTAMP'] ];
-// mensaje secreto
-$secret = 'sic mundus creatus est';
-// generamos el hash
-$newHash = sha1($uid.$timestamp.$secret);
+// Guardamos el URL del servidor de autentificación
+$url = 'https://localhost:8001';
 
-if ( $newHash !== $hash ) {
-	header( 'Status-Code: 403' );
-	
-		echo json_encode(
-			[
-				'error' => "No autorizado. Hash esperado: $newHash, hash recibido: $hash",
-			]
-		);
-		
-		die;
+// Se establece una conexión con el servidor de autentificación
+$ch = curl_init( $url );
+
+// Creamos un header a la conexión
+curl_setopt( $ch, CURLOPT_HTTPHEADER, [
+	"X-Token: {$_SERVER['HTTP_X_TOKEN']}",
+]);
+curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
+
+// Enviamos el header a la conexión
+$ret = curl_exec( $ch );
+
+// Si hay un error en la conexión, lanzamos error
+if ( curl_errno($ch) != 0 ) {
+	die ( curl_error($ch) );
 }
 
+// Si la conexión no lanza verdadero, tamibén lanzamos error
+if ( $ret !== 'true' ) {
+	http_response_code( 403 );
+	die;
+}
 
+// -----------------------------------------------------------------------------------------
+// // AUTENTIFICACION BASADA EN HMAC
+// // Si alguno de estos parámetros no está en el header
+// if ( 
+// 	!array_key_exists('HTTP_X_HASH', $_SERVER) || 
+// 	!array_key_exists('HTTP_X_TIMESTAMP', $_SERVER) || 
+// 	!array_key_exists('HTTP_X_UID', $_SERVER)  
+// 	) {
+
+// 	// Lanzamos un error de autorización
+// 	header( 'Status-Code: 403' );
+
+// 	echo json_encode(
+// 		[
+// 			'error' => "No autorizado",
+// 		]
+// 	);
+	
+// 	die;
+// }
+
+// // Rescatamos todos los valores del header, id, timestamp y hash
+// list( $hash, $uid, $timestamp ) = [ $_SERVER['HTTP_X_HASH'], $_SERVER['HTTP_X_UID'], $_SERVER['HTTP_X_TIMESTAMP'] ];
+// // mensaje secreto
+// $secret = 'sic mundus creatus est';
+// // generamos el hash
+// $newHash = sha1($uid.$timestamp.$secret);
+
+// if ( $newHash !== $hash ) {
+// 	header( 'Status-Code: 403' );
+	
+// 		echo json_encode(
+// 			[
+// 				'error' => "No autorizado. Hash esperado: $newHash, hash recibido: $hash",
+// 			]
+// 		);
+		
+// 		die;
+// }
+
+// -----------------------------------------------------------------------------------------
 // AUTENTIFICACIÓN BASADA EN HTTP
 // Autenticación del nombre de usuario
 // $user = array_key_exists('PHP_AUTH_USER', $_SERVER) ? $_SERVER['PHP_AUTH_USER'] : '';
@@ -61,6 +101,7 @@ if ( $newHash !== $hash ) {
 
 // 	die;
 // }
+// -----------------------------------------------------------------------------------------
 
 
 // Definimos los recursos disponibles
