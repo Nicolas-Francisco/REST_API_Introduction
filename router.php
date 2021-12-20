@@ -1,6 +1,12 @@
 <?php
 
-$matches = [];
+$matches=[];
+
+// Excepcion para las url principal sea index.html
+if (in_array( $_SERVER["REQUEST_URI"], [ '/index.html', '/', '' ] )) {
+    echo file_get_contents( '/Users/luisrangel/dev/cursos/php/APIRest/index.html' );
+    die;
+}
 
 // Verifica expresion regular de la forma "/(A-Z)*/(A-Z)*"
 // En nuestro caso, tenemos "/<recurso>/<id_recurso>"
